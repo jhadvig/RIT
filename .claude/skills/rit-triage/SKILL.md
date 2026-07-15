@@ -41,13 +41,13 @@ Read `rit_manual.md` from the **current working directory** (not a hardcoded pat
 
    Also note whether the panel JQL already filters by Release Blocker status (e.g. `"Release Blocker" in (Approved, Proposed)`). If it does, set a flag `panel_is_release_blockers = true` — this suppresses Action 3 (release blocker assessment) since the field is already set.
 
-2. **RIT team roster** — Find the "Current RIT Rotation" section. Extract the week-start date from the heading. If that date is more than 7 days in the past, **stop and warn the user**: "⚠️ The RIT rotation in `rit_manual.md` appears stale. Please update the Current RIT Rotation section before running triage." Do not proceed until the user confirms the section is up to date. Then parse the Engineering table to get: name, email, Jira Account ID, area of expertise, notes (e.g. PTO). Include **all** engineers regardless of their role label. Skip only engineers explicitly marked as PTO.
+2. **RIT team roster** — Find the most recent `triaged_bugs_YYYY-MM-DD.md` file in the **current working directory** (sort by date in filename, pick the latest). Extract the week-start date from the heading. If that date is more than 7 days in the past, **stop and warn the user**: "⚠️ The tracker file appears stale (week of YYYY-MM-DD). Please run `/rit-start` to set up the current rotation before running triage." Do not proceed until the user confirms. Then parse the "Engineering" table in the tracker to get: name, email, Jira Account ID, area of expertise, notes (e.g. PTO). Include **all** engineers regardless of their role label. Skip only engineers explicitly marked as PTO.
 
 3. **Comment templates** — Find the "Comment templates for status transitions" section. Load the templates for "ASSIGNED — no linked PRs (ownership check)", "PR-closed reset (Prow Bot)", and "Setting priority (from Undefined)".
 
 4. **Release Blocker rules** — Read `release_blocker_rules.md` from the same directory as this skill file. Load the A/C/R/P rule tables for use in Action 3. Also read the `CURRENT_RELEASE` value from the top of that file — use it when evaluating version-scoped rules (e.g. flagging bugs whose Affects Version does not match the current GA target).
 
-5. **Tracker file** — Look for an existing `triaged_bugs_YYYY-MM-DD.md` file in the **current working directory** where the date matches the current RIT rotation week start date from the "Current RIT Rotation" heading. If it exists, read the current assignment distribution to know each engineer's current bug count and already-assigned keys. If it doesn't exist, create it with the standard header and empty tables (see Tracker Format below).
+5. **Tracker file** — The tracker file found in step 2 is also the source for assignment distribution. Read the "Assignment Distribution" table to know each engineer's current bug count and already-assigned keys. If the tracker file does not exist, **stop and tell the user to run `/rit-start` first**.
 
 ### Step 2: Fetch all bugs
 

@@ -1,11 +1,11 @@
 ---
-name: rit-unassign
+name: rit-end
 description: End-of-week RIT cleanup — remove stale assignments from bugs assigned by /rit-triage so the next rotation starts with a clean slate
 argument-hint: "(no arguments required)"
 allowed-tools: Read, Edit, Write, mcp__plugin_jira_atlassian__searchJiraIssuesUsingJql, mcp__plugin_jira_atlassian__getJiraIssue, mcp__plugin_jira_atlassian__editJiraIssue, mcp__plugin_jira_atlassian__addCommentToJiraIssue, mcp__plugin_jira_atlassian__getJiraIssueRemoteIssueLinks
 ---
 
-# RIT Unassign
+# RIT End
 
 End-of-week cleanup skill. Reads the current rotation tracker file to identify exactly which
 bugs were assigned by `/rit-triage` this week, then removes stale assignments for bugs not
@@ -14,7 +14,7 @@ picked up. Only operates on bugs in the tracker whose current assignee is in the
 ## Usage
 
 ```
-/rit-unassign
+/rit-end
 ```
 
 Run at the end of the RIT rotation week, before the next rotation begins.
@@ -25,12 +25,13 @@ Run at the end of the RIT rotation week, before the next rotation begins.
 
 Read `rit_manual.md` from the **current working directory** and extract:
 
-1. **RIT team roster** — Find the "Current RIT Rotation" section. Extract the week-start
-   date from the heading. If that date is more than 7 days in the past, **stop and warn
-   the user**: "⚠️ The RIT rotation in `rit_manual.md` appears stale. Running cleanup
-   against a stale roster will target the wrong engineers. Please update the Current RIT
-   Rotation section before running cleanup." Do not proceed until the user confirms the
-   section is up to date. Then parse the Engineering table to get the list of active
+1. **RIT team roster** — Find the most recent `triaged_bugs_YYYY-MM-DD.md` file in the
+   **current working directory** (sort by date in filename, pick the latest). Extract the
+   week-start date from the heading. If that date is more than 7 days in the past, **stop
+   and warn the user**: "⚠️ The tracker file appears stale (week of YYYY-MM-DD). Running
+   cleanup against a stale roster will target the wrong engineers. Please run `/rit-start`
+   to set up the current rotation before running cleanup." Do not proceed until the user
+   confirms. Then parse the "Engineering" table in the tracker to get the list of active
    engineers (name + Jira Account ID). This is used to decide which assignees are eligible
    for cleanup — **only bugs currently assigned to someone in this roster will be considered
    for unassignment**. Skip engineers marked PTO (they are still in the roster for
@@ -40,9 +41,8 @@ Read `rit_manual.md` from the **current working directory** and extract:
    Load the template for:
    - "EOW cleanup — unassignment"
 
-3. **Tracker file** — Find the existing `triaged_bugs_YYYY-MM-DD.md` matching the current
-   rotation week. This is the **source of truth** for which bugs were assigned by
-   `/rit-triage`. Read:
+3. **Tracker file** — The tracker file found in step 1 is also the source of truth for
+   which bugs were assigned by `/rit-triage`. Read:
    - The "Assignment Distribution" table: engineer → assigned keys
    - The "Triaged This Week" table: all bugs with their assigned engineer
 
@@ -168,8 +168,8 @@ Show:
 - **Tracker is the only source of truth** — only bugs recorded in the current week's
   `triaged_bugs_YYYY-MM-DD.md` are eligible for cleanup.
 - **Only unassign RIT roster engineers** — if the current assignee is not in the
-  Engineering table of the "Current RIT Rotation" section, skip the bug entirely. It was
-  intentionally assigned to a specialist; `/rit-sweep` handles the stale case later.
+  Engineering table of the tracker file, skip the bug entirely. It was intentionally
+  assigned to a specialist; `/rit-sweep` handles the stale case later.
 - **Never unassign bugs that have progressed** — any status other than `New` means the
   engineer picked it up; skip entirely.
 - **Never unassign PR-closed reset bugs** — Prow Bot comment is the signal; skip silently.

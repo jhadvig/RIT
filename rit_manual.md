@@ -587,27 +587,87 @@ Common triage condition: `(labels is EMPTY or labels not in (triaged) or assigne
 | In Progress | `status in ("In Progress", Assigned, ON_QA)` | `priority, severity, key` |
 | All Open | *(no extra — base triage condition only)* | `priority, severity, key` |
 
-# Current RIT Rotation — Week of 2026-06-29 (Green Pod)
+# People Directory
 
-## Non-Engineering
+Static roster of all PIXAA engineers and managers eligible to serve as RIT Lead. Update this section when people join, leave, or change roles — **do not update it weekly**. `/rit-start` reads this at the beginning of each rotation to populate the "Current RIT Rotation" section.
 
-| Role | Name | Email | Jira Account ID |
-|------|------|-------|-----------------|
-| RIT Lead | Christopher Moore | cmoore@redhat.com | 712020:79bacff6-2d4f-4538-ad35-b24d3bc1b5e4 |
+Fields marked `—` should be filled in the first time that person participates in a rotation.
 
-## Engineering
+## Non-Engineering Leads
 
-| Name | Email | Jira Account ID | Area of expertise | Notes |
-|------|-------|-----------------|-------------------|-------|
-| Ankita Thomas | ankithom@redhat.com | | OLM | Open to anything |
-| Jakub Hadvig | jhadvig@redhat.com | 70121:7dcaf1d9-8410-4fbf-b976-5c10712ba4f3 | Console | Open to anything |
-| Jefferson Ramos | jeramos@redhat.com | | Serverless (QE background) | Go, Java, Quarkus |
-| Martin Simka | msimka@redhat.com | | QE + infra (Jenkins, OpenStack, OCP Virt), Serverless (eventing-integrations), Java middleware (Quarkus) | |
-| Matthew Booth | mbooth@redhat.com | 70121:3bb7db16-dda6-4f42-ad2c-e6e15ca4e605 | CAPI/cloud, Go controllers, Prow config, tests | Python (reluctantly) |
-| Pratik Mahajan | pmahajan@redhat.com | | CVO, Cincinnati | PTO this week |
-| Rachel Ryan | raryan@redhat.com | | CAPI/cloud provider | Open to anything |
-| Stanislav Jakuschevskij | sjakusch@redhat.com | 712020:e270ee2c-90dd-48d9-b316-c8ec70cc03d3 | Serverless/Knative Functions & Eventing | Full stack JS/TS, Go, Tekton maintainer |
-| Stefano Nardo | snardo@redhat.com | 712020:43a3c91b-e077-45e1-bc6d-6d5451b6e21d | Console | Open to anything |
+| Name | Email | Jira Account ID | Pods |
+|------|-------|-----------------|------|
+| Christopher Moore | cmoore@redhat.com | 712020:79bacff6-2d4f-4538-ad35-b24d3bc1b5e4 | Green Koala, Green Wolf, Puce Vole |
+| Gavin Bell | gabell@redhat.com | 712020:e19b1d0e-67b9-4f42-ac4e-f39259005ae2 | Brown Adder, Brown Hornet |
+| Lukas Berk | lberk@redhat.com | 557058:5c612674-3db5-44d8-b6c6-0c6195f067bc | Orange Dolphin, Orange Tiger |
+| Sharada Vetsa | svetsa@redhat.com | 640a25ad0d9b61193c285b9e | Blue Marlin, Blue Jay |
+| Vaclav Tunka | vtunka@redhat.com | 70121:b9aa7ecc-8320-4b35-94c5-f2381957c423 | Yellow Octopus, Yellow Panther, Papaya Goat |
+
+## Engineering Roster
+
+| Name | Email | Jira Account ID | Area of expertise | Pod |
+|------|-------|-----------------|-------------------|-----|
+| Jakub Hadvig | jhadvig@redhat.com | 70121:7dcaf1d9-8410-4fbf-b976-5c10712ba4f3 | Console (ex-Lead) | Green Koala |
+| Pratik Mahajan | pmahajan@redhat.com | 712020:b8285f9a-f813-4133-a6b1-8a0aa61f52a2 | OTA | Green Koala |
+| Jefferson Ramos (QE) | jeramos@redhat.com | 712020:53c1726a-176e-4e2e-ab07-794a67784f06 | Serverless | Green Koala |
+| Rachel Ryan | raryan@redhat.com | 62a0648e6a7b750068a29328 | CAPI / Cluster Infra | Green Koala |
+| Ankita Thomas | ankithom@redhat.com | 712020:5f75030b-486a-48b6-8b9e-4b573884eafd | OLM | Green Koala |
+| Matthew Booth | mbooth@redhat.com | 70121:3bb7db16-dda6-4f42-ad2c-e6e15ca4e605 | Serverless | Green Wolf |
+| Stanislav Jakuschevskij | sjakusch@redhat.com | 712020:e270ee2c-90dd-48d9-b316-c8ec70cc03d3 | Serverless | Green Wolf |
+| Stefano Nardo | snardo@redhat.com | 712020:43a3c91b-e077-45e1-bc6d-6d5451b6e21d | Console | Green Wolf |
+| Martin Simka (QE) | msimka@redhat.com | 557058:209e740c-ea16-46b8-a7db-763437f7cd84 | Serverless | Green Wolf |
+| Fabricio Aguiar | fabricio.aguiar@redhat.com | 712020:ea4f035f-62fd-4bd9-986d-56d958c025db | OTA | Brown Adder |
+| Damiano Donati | ddonati@redhat.com | 712020:a3220a8f-1a89-43c2-b57b-ee6d406a7f71 | CAPI / Cluster Infra | Brown Adder |
+| Daniel Franz | dfranz@redhat.com | 712020:da4d09a9-1448-43c6-bdad-c767b2c6918e | OLM | Brown Adder |
+| David Fridrich | dfridric@redhat.com | 712020:bc077c07-3f4e-406a-b03a-3ab867a469c8 | Serverless | Brown Adder |
+| Predrag Knežević | pknezevi@redhat.com | 70121:14b24d07-5b31-4749-b3bf-a1486a4b172d | OLM | Brown Adder |
+| Francesco Giudici | fgiudici@redhat.com | 70121:92bcea53-a041-491b-be9e-49856a26b067 | OLM | Brown Hornet |
+| Per Goncalves da Silva | pegoncal@redhat.com | 628001d898eae50068a0f20a | OLM | Brown Hornet |
+| Luke Kingland | lkinglan@redhat.com | 712020:325fe379-4b98-43b2-88fe-6c1c4486741a | Serverless | Brown Hornet |
+| Ali Ok | aliok@redhat.com | 712020:ae0ef594-8e81-45c2-8007-3b8a2d4e4e66 | MCP Lifecycle Operator | Brown Hornet |
+| Marek Schmidt (QE) | maschmid@redhat.com | 557058:55a1f101-c320-48ee-8eaf-7a3b1dde41ef | Serverless | Brown Hornet |
+| Cyril Ajieh | cajieh@redhat.com | 712020:c2cd81ee-ac0f-4673-93b9-5014028d12de | Console | Orange Dolphin |
+| Eric Fried | efried@redhat.com | 70121:6fceac0e-1d38-4eef-a688-34d32dc44971 | Hive | Orange Dolphin |
+| Jordan Keister | jkeister@redhat.com | 712020:184305cd-b17c-4602-9685-42b10fa14c7e | OLM | Orange Dolphin |
+| Calum Murray | cmurray@redhat.com | 712020:ac2a346b-b4ee-4f78-a8e1-015d46d5d88c | MCP Server | Orange Dolphin |
+| Mark Old | mold@redhat.com | 712020:4f6e3c26-1d77-4c7d-8d6c-ae61f86f1605 | CCO / Hive | Orange Dolphin |
+| Tayler Geiger | tgeiger@redhat.com | 712020:59d0d6ed-54ca-4861-8ff9-e41e510341d6 | OLM | Orange Tiger |
+| Robb Hamilton | rhamilto@redhat.com | 557058:6690f1cd-f833-4c6b-afd8-2fc4e98e1632 | Console | Orange Tiger |
+| Sahil Shah (QE) | sahshah@redhat.com | 712020:5ae87d44-c0d9-4cad-8bdd-775998935dd9 | Updates Chaos Testing | Orange Tiger |
+| Michal Vinkler (QE) | mvinkler@redhat.com | 557058:48e9e164-5f6e-477b-a28b-fa70197903c3 | Serverless | Orange Tiger |
+| Nolan Brubaker | nbrubake@redhat.com | 63ed0c04bc0f9b3a16fc94d3 | CAPI / Cluster Infrastructure | Puce Vole |
+| Jon Jackson | jonjacks@redhat.com | 557058:437cf171-b344-4ff4-8fef-67018f883eef | Console | Puce Vole |
+| Jackson Lee | jaclee@redhat.com | 712020:a5627b41-0080-496c-90b1-2c1a58a929dc | Console | Puce Vole |
+| Suhani Mehta | sumehta@redhat.com | 62b5fa7db8e499e567eaef98 | Hive | Puce Vole |
+| Pedro Almeida | pealmeid@redhat.com | 712020:c6c96e60-4bc5-4135-8c64-a49cf502028e | CAPI testing | Papaya Goat |
+| Robert Luby | rluby@redhat.com | 712020:08f540ff-6cd1-482f-ab08-50b20460556b | Console | Papaya Goat |
+| David Simansky | dsimansk@redhat.com | 70121:3e231cc5-8c8d-472d-b1ad-38c04177f604 | Serverless | Papaya Goat |
+| Pranshu Srivastava | prasriva@redhat.com | 63bbef7094d18cbf67722c5d | In-cluster Monitoring / C/MAPI | Papaya Goat |
+| Matej Vasek | mvasek@redhat.com | 712020:c4378872-5197-413c-bbc2-90208b5f6f0f | Serverless | Papaya Goat |
+| Bruno Andrade (QE) | bandrade@redhat.com | 712020:35c1f2ac-2085-430b-ae88-d43208e564d0 | OLM QE | Blue Marlin |
+| Erica Hinkle | ehinkle@redhat.com | 712020:1fcb7ae1-2435-4a65-ac1e-9edf7cf878b8 | — | Blue Marlin |
+| Hongkai Liu | hongkliu@redhat.com | 70121:8d2c2a5a-cce2-4df8-8ea4-72d6931e58fc | OTA | Blue Marlin |
+| Jeremiah Stuever | jstuever@redhat.com | 70121:194f5fe9-3d24-463e-8471-7b9eb97ea1e7 | CCO | Blue Marlin |
+| Nader Ziada | nziada@redhat.com | 712020:5b80d67a-e0b7-4769-8855-391ffa72adfb | Serverless | Blue Marlin |
+| Theo Barber-Bany | tbarberb@redhat.com | 712020:e0b5a0a1-bb0c-452f-9b52-9f329571113e | CAPI / Cluster Infra | Blue Jay |
+| Steve Goodwin | sgoodwin@redhat.com | 70121:661aa989-7bcf-4042-8809-75ccdfa8f1cb | Console | Blue Jay |
+| Leo Li | leoli@redhat.com | 712020:e34db6a2-9a6a-4060-8c8d-9040d825c868 | Console | Blue Jay |
+| Todd Short | tshort@redhat.com | 712020:a5f16af4-fa17-430e-a58c-8ed0cf1861be | OLM | Blue Jay |
+| Milind Yadav | miyadav@redhat.com | 712020:9be9a9f2-bfa2-45b4-b909-faae33d3f490 | QE - Hive / CCO / CAPI / Cluster Infra | Blue Jay |
+| David Hurta | dhurta@redhat.com | 712020:6afcc026-1d06-40a3-bd29-7d81160730ba | OTA | Yellow Octopus |
+| Radek Manak | rmanak@redhat.com | 712020:4928aad1-91d4-45a2-b8bb-6d6ad93a74b2 | CAPI / Cluster Infra | Yellow Octopus |
+| Christoph Stäbler | cstabler@redhat.com | 712020:8fcbe1c9-f6d3-4daa-9607-55e3064af65c | Serverless | Yellow Octopus |
+| Chris Suszynski (QE) | ksuszyns@redhat.com | 712020:cdc648f0-9c5b-4689-8196-06826e13ba46 | Serverless | Yellow Octopus |
+| Matthias Weßendorf | mwessend@redhat.com | 70121:fa34c8b3-aaab-4a21-8556-1e2274d0f1d1 | MCP Server / Lifecycle Operator | Yellow Octopus |
+| Santiago Greco | sgreco@redhat.com | 712020:99ec4ab0-e398-427c-85a6-4e7c04cf2bab | Console | Yellow Panther |
+| Dinesh Kumar S | dis@redhat.com | 712020:c754649a-94d7-4704-a2eb-017b70b0e141 | OTA | Yellow Panther |
+| Kaustubh Pande | kpande@redhat.com | 712020:091ab44e-66d4-4dac-bd53-06edf5248450 | Serverless | Yellow Panther |
+| Rudra Pratap | rpratap@redhat.com | 70121:e19bdb8b-f16a-451c-82ec-c46afb7c81d4 | Serverless | Yellow Panther |
+| Vikram Raj | viraj@redhat.com | 557058:20ff13a7-b1bf-42ec-96d3-b3cef04c850e | Console | Yellow Panther |
+
+# Current RIT Rotation
+
+The current week's team roster lives in the tracker file (`triaged_bugs_YYYY-MM-DD.md`). Run `/rit-start` at the beginning of each rotation to create it from the People Directory above.
 
 # Lookup
 

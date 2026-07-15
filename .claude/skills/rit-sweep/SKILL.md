@@ -8,7 +8,7 @@ allowed-tools: Read, mcp__plugin_jira_atlassian__searchJiraIssuesUsingJql, mcp__
 # RIT Sweep
 
 Health check skill. Finds triaged bugs stuck in `New` status that are invisible to both
-`/rit-triage` (already triaged) and `/rit-unassign` (not in the current tracker). Handles
+`/rit-triage` (already triaged) and `/rit-end` (not in the current tracker). Handles
 two cases:
 
 1. **PR-closed reset** — bug was reset to `New` by Prow Bot after a PR was closed.
@@ -49,10 +49,12 @@ Read `rit_manual.md` from the **current working directory** and extract:
    to **14 days**. A bug is considered stale if its `updated` field is older than this
    threshold relative to today.
 
-4. **Unassign mode** — If `--unassign` is set, also read the Engineering table from the
-   "Current RIT Rotation" section to get the list of active RIT engineers (name + Jira
-   Account ID). Only bugs whose current assignee is in this list are eligible for
-   unassignment — external engineers are never unassigned, even in `--unassign` mode.
+4. **Unassign mode** — If `--unassign` is set, find the most recent
+   `triaged_bugs_YYYY-MM-DD.md` file in the **current working directory** and read the
+   "Engineering" table to get the list of active RIT engineers (name + Jira Account ID).
+   If no tracker file exists, **stop and tell the user to run `/rit-start` first**. Only
+   bugs whose current assignee is in this list are eligible for unassignment — external
+   engineers are never unassigned, even in `--unassign` mode.
 
 ### Step 2: Fetch bugs
 

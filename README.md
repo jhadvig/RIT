@@ -1,12 +1,29 @@
 # RIT Triage with Claude Code
 
 This repo contains Claude Code skills for automating the PIXAA RIT (Rotational Interrupt Team)
-bug triage workflow. Three skills cover the full rotation lifecycle — from triaging new bugs
-during the week, to end-of-week cleanup, to ongoing health checks.
+bug triage workflow. Four skills cover the full rotation lifecycle — from selecting the week's
+team, to triaging bugs, to end-of-week cleanup and ongoing health checks.
 
 ---
 
 ## Skills
+
+### `/rit-start` — Start-of-week setup
+
+Run once at the beginning of each rotation to set up the week's team.
+
+**What it does:**
+- Reads the People Directory from `rit_manual.md` (static roster of all PIXAA engineers by pod)
+- Prompts you to select the RIT Lead, which determines which pod(s) are on rotation
+- Lets you exclude individuals (PTO, leave) from the active team
+- Creates the weekly tracker file (`triaged_bugs_YYYY-MM-DD.md`) with the roster and empty tables
+
+```
+/rit-start
+/rit-start 2026-07-14
+```
+
+---
 
 ### `/rit-triage` — Triage incoming bugs
 
@@ -42,7 +59,7 @@ Panel names are matched fuzzily — partial names and missing leading words are 
 
 ---
 
-### `/rit-unassign` — End-of-week cleanup
+### `/rit-end` — End-of-week cleanup
 
 Run once at the end of the rotation week, before the next team starts.
 
@@ -56,7 +73,7 @@ Run once at the end of the rotation week, before the next team starts.
   fast-path (no re-triage of component/priority/release blocker needed)
 
 ```
-/rit-unassign
+/rit-end
 ```
 
 ---
@@ -87,15 +104,17 @@ to avoid cleaning up bugs that are simply slow-moving.
 ## Typical weekly workflow
 
 ```
-Everyday    /rit-triage Untriaged          ← triage new bugs
+Monday      /rit-start                              ← select lead, pod, create tracker
+
+Everyday    /rit-triage Untriaged                    ← triage new bugs
             /rit-triage With Due Date
             /rit-triage Component Regressions
             ...
 
-Mid-week    /rit-sweep                     ← health check, PR-closed nudges
+Mid-week    /rit-sweep                               ← health check, PR-closed nudges
 
-Friday EOW  /rit-unassign                  ← clean up stale assignments
-            /rit-sweep --stale-days 30 --unassign   ← optional deeper cleanup
+Friday EOW  /rit-end                                 ← clean up stale assignments
+            /rit-sweep --stale-days 30 --unassign    ← optional deeper cleanup
 ```
 
 ---
@@ -104,22 +123,22 @@ Friday EOW  /rit-unassign                  ← clean up stale assignments
 
 ### 1. Jira MCP Server (required)
 
-All three skills use the Jira MCP server. Configure a working connection in your Claude Code
+All skills use the Jira MCP server. Configure a working connection in your Claude Code
 settings with access to the OCPBUGS project.
 
-### 2. Update `rit_manual.md` each rotation (required)
+### 2. People Directory in `rit_manual.md` (maintain as needed)
 
-Before running any skill, update the `# Current RIT Rotation` section with:
-- The week-start date and pod name in the heading
-- RIT Lead in the Non-Engineering table
-- All engineers in the Engineering table (name, email, Jira Account ID, expertise, notes)
-- Mark PTO engineers in the Notes column
+The People Directory is a static roster of all PIXAA engineers and managers, organized by pod.
+Update it when people join, leave, or change roles — **not weekly**. `/rit-start` reads it
+at the beginning of each rotation to build the tracker file.
 
-The heading format must be: `# Current RIT Rotation — Week of YYYY-MM-DD (Pod Name)`
+### 3. Weekly setup with `/rit-start` (required)
 
-`/rit-triage` will stop and warn if this section appears stale (> 7 days old).
+Run `/rit-start` at the beginning of each rotation. It selects the RIT Lead and pod(s),
+handles PTO exclusions, and creates the tracker file. `/rit-triage` and `/rit-end` will
+refuse to run without a current tracker.
 
-### 3. Release blocker rules (already configured)
+### 4. Release blocker rules (already configured)
 
 The `.claude/skills/rit-triage/release_blocker_rules.md` file contains the full A/C/R/P
 evaluation framework. Update `CURRENT_RELEASE` at the top of that file when the GA target
@@ -129,12 +148,16 @@ changes:
 CURRENT_RELEASE = 5.0
 ```
 
-### 4. Tracker file (auto-created)
+### 5. Tracker file (auto-created by `/rit-start`)
 
-`/rit-triage` creates `triaged_bugs_YYYY-MM-DD.md` on first run for the week. It records:
+`/rit-start` creates `triaged_bugs_YYYY-MM-DD.md` with the week's roster and empty tables.
+`/rit-triage` and `/rit-end` read and update it throughout the week. It records:
+- RIT Lead and engineering roster
 - Assignment distribution per engineer
 - All bugs triaged this week with actions taken
 - Bugs closed during triage
+
+The tracker file is gitignored — it is local only and not committed.
 
 ---
 
@@ -143,14 +166,16 @@ CURRENT_RELEASE = 5.0
 ```
 RIT/
 ├── README.md                          # This file
-├── rit_manual.md                      # RIT process manual, JQL queries, team roster, templates
-├── triaged_bugs_YYYY-MM-DD.md         # Weekly tracker (auto-created by /rit-triage)
+├── rit_manual.md                      # Process manual, People Directory, JQL queries, templates
+├── triaged_bugs_YYYY-MM-DD.md         # Weekly tracker (gitignored, created by /rit-start)
 └── .claude/
     └── skills/
+        ├── rit-start/
+        │   └── SKILL.md               # Start-of-week setup skill
         ├── rit-triage/
         │   ├── SKILL.md               # Triage skill definition
         │   └── release_blocker_rules.md  # A/C/R/P release blocker evaluation rules
-        ├── rit-unassign/
+        ├── rit-end/
         │   └── SKILL.md               # EOW cleanup skill definition
         └── rit-sweep/
             └── SKILL.md               # Health check skill definition
