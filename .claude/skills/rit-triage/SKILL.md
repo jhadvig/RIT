@@ -295,9 +295,9 @@ Team bandwidth: X% (N/M soft capacity) | A at limit | B over | C available
 |-----|---------|----------|-------|---------|
 ```
 
-The **Assignment Distribution** table must include **all engineers** from the roster (even those with 0 bugs) and a **Keys** column listing every bug key assigned, comma-separated. The **Bugs** column uses "X of Y" format where Y is `SOFT_LIMIT`. Add ⚠️ when X >= Y (soft limit reached). Add 🛑 when X >= `HARD_LIMIT`.
+The **Assignment Distribution** table must include **all engineers** from the roster (even those with 0 bugs) and a **Keys** column listing every bug key assigned, comma-separated. The **Bugs** column uses "X of Y" format where Y is `SOFT_LIMIT`. Add ⚠️ when X >= Y and X < `HARD_LIMIT`. Add 🛑 when X >= `HARD_LIMIT` (🛑 takes precedence over ⚠️).
 
-The **bandwidth summary** line uses: capacity = `(total_bugs / (engineer_count * SOFT_LIMIT)) * 100`.
+The **bandwidth summary** line uses: capacity = `(total_bugs / (engineer_count * SOFT_LIMIT)) * 100`. Bandwidth categories: "available" = count < `SOFT_LIMIT`, "at limit" = `SOFT_LIMIT` <= count < `HARD_LIMIT`, "over" = count >= `HARD_LIMIT`.
 
 ---
 
