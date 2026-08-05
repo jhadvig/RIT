@@ -24,6 +24,7 @@ Read `rit_manual.md` from the **current working directory**. Extract:
 
 1. **Non-Engineering Leads table** from the "People Directory" section: name, email, Jira Account ID, pods for every row.
 2. **Engineering Roster table** from the "People Directory" section: name, email, Jira Account ID, area of expertise, pod for every row.
+3. **Bug count limits** — Read the "Shared Constants" section of `rit_manual.md` and extract `SOFT_LIMIT` and `HARD_LIMIT` values.
 
 If the People Directory section is missing, stop and tell the user to add it.
 
@@ -126,9 +127,13 @@ File contents:
 
 ## Assignment Distribution
 
-| Engineer | Bugs Assigned | Keys |
-|----------|--------------|------|
-| Name | 0 |  |
+Soft limit: 6 | Hard limit: 8
+
+Team bandwidth: 0% (0/N soft capacity) | 0 at limit | 0 over | N available
+
+| Engineer | Bugs | Keys |
+|----------|------|------|
+| Name | 0 of 6 |  |
 
 ## Triaged This Week
 
@@ -144,6 +149,11 @@ File contents:
 
 | Bug | Summary | Status | Notes |
 |-----|---------|--------|-------|
+
+## Outliers (In Progress / All Open)
+
+| Bug | Summary | Priority | Panel | Missing |
+|-----|---------|----------|-------|---------|
 ```
 
 - Sort engineers alphabetically by last name in the Engineering table.
@@ -174,3 +184,4 @@ File created: triaged_bugs_YYYY-MM-DD.md
 - **The tracker file is gitignored** — it is local only and not committed.
 - **PTO/unavailable engineers appear in the Engineering table but not in Assignment Distribution** — `/rit-triage` reads the Assignment Distribution table to decide who gets bugs, so omitting them there is sufficient.
 - **Missing email or Jira Account ID (`—`)** — if a selected engineer or the chosen lead has `—` in either field, stop and ask the user to fill those values in the People Directory before creating the tracker. The tracker cannot be created with `—` in those columns because `/rit-triage` uses them for Jira assignment.
+- **Soft/hard limits are read from Shared Constants** — do not hardcode the values in the tracker template. Read `SOFT_LIMIT` and `HARD_LIMIT` from `rit_manual.md` at runtime.
