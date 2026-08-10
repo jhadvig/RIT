@@ -25,12 +25,14 @@ Run once at the beginning of each rotation to set up the week's team.
 
 ---
 
-### `/rit-triage` — Triage incoming bugs
+### `/rit-triage` — Triage and assign bugs
 
-Run throughout the week to triage bugs from any PIXAA dashboard panel.
+Run throughout the week to triage and assign bugs across all PIXAA dashboard panels.
 
 **What it does:**
-- Fetches bugs from a dashboard panel via the Jira MCP server
+- Fetches bugs from all dashboard panels automatically — no panel argument needed
+- Deduplicates across panels and sorts by panel tier and bug priority
+- Pipelines bugs through parallel triage (assessment) and assign (engineer selection) sub-agents
 - Classifies each bug and proposes triage actions:
   - Priority assessment (CVE, regression, customer impact)
   - Release Blocker evaluation (using the A/C/R/P rule framework)
@@ -38,6 +40,9 @@ Run throughout the week to triage bugs from any PIXAA dashboard panel.
   - `triaged` label application
   - Ownership check comment for ASSIGNED bugs with no linked PRs
   - PR-closed reset detection (Prow Bot) and notification
+- Engineer assignment with capacity enforcement (soft limit: warning, hard limit: cap)
+- Catch pass for Major/Critical outliers in In Progress / All Open panels
+- Optional Slack summary output for posting assignment status
 - Records all actions in a weekly tracker file (`triaged_bugs_YYYY-MM-DD.md`)
 
 **Key principle:** automate the obvious, pause on judgment. Labels are applied automatically.
@@ -45,17 +50,13 @@ Priority, assignee, component checks, and Release Blocker always get a proposal 
 confirmation.
 
 ```
-/rit-triage With Customer Cases
-/rit-triage Component Regressions
-/rit-triage Untriaged
-/rit-triage With Due Date
-/rit-triage Release Blockers
-/rit-triage With OCPPRIO link
-/rit-triage In Progress
-/rit-triage All Open
+/rit-triage
 ```
 
-Panel names are matched fuzzily — partial names and missing leading words are accepted.
+No arguments. Panels are processed automatically in priority order:
+1. With OCPPRIO link → Component Regressions → Release Blockers (Tier 1)
+2. With Customer Cases → With Due Date → Untriaged (Tier 2)
+3. In Progress → All Open (catch pass — report Major/Critical outliers only)
 
 ---
 
@@ -106,10 +107,7 @@ to avoid cleaning up bugs that are simply slow-moving.
 ```
 Monday      /rit-start                              ← select lead, pod, create tracker
 
-Everyday    /rit-triage Untriaged                    ← triage new bugs
-            /rit-triage With Due Date
-            /rit-triage Component Regressions
-            ...
+Everyday    /rit-triage                              ← triage and assign all panels
 
 Mid-week    /rit-sweep                               ← health check, PR-closed nudges
 
@@ -153,7 +151,7 @@ CURRENT_RELEASE = 5.0
 `/rit-start` creates `triaged_bugs_YYYY-MM-DD.md` with the week's roster and empty tables.
 `/rit-triage` and `/rit-end` read and update it throughout the week. It records:
 - RIT Lead and engineering roster
-- Assignment distribution per engineer
+- Assignment distribution per engineer with capacity tracking ("X of Y" format, soft/hard limits)
 - All bugs triaged this week with actions taken
 - Bugs closed during triage
 

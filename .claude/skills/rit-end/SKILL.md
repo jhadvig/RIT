@@ -37,18 +37,14 @@ Read `rit_manual.md` from the **current working directory** and extract:
    for unassignment**. Skip engineers marked PTO (they are still in the roster for
    eligibility purposes).
 
-2. **Comment templates** — Find the "Comment templates for status transitions" section.
-   Load the template for:
-   - "EOW cleanup — unassignment"
-
-3. **Tracker file** — The tracker file found in step 1 is also the source of truth for
+2. **Tracker file** — The tracker file found in step 1 is also the source of truth for
    which bugs were assigned by `/rit-triage`. Read:
-   - The "Assignment Distribution" table: engineer → assigned keys
+   - The "Assignment Distribution" table: engineer → total open count (from "X of Y" format in the Total Open column), RIT assigned count, and keys. Also read the soft and hard limit values from the header line ("Soft limit: N | Hard limit: M").
    - The "Triaged This Week" table: all bugs with their assigned engineer
 
    Collect the full list of bug keys assigned by RIT this week.
 
-4. **Shared Constants** — Read the "Shared Constants" section of `rit_manual.md` to load the canonical PIXAA base filter and Prow Bot reset string. Use these when building JQL queries and checking for Prow Bot comments.
+3. **Shared Constants** — Read the "Shared Constants" section of `rit_manual.md` to load the canonical PIXAA base filter and Prow Bot reset string. Use these when building JQL queries and checking for Prow Bot comments.
 
 ### Step 2: Fetch current state of tracker bugs
 
@@ -124,17 +120,17 @@ batch together:
 > "Propose removing assignee from N bugs assigned to [engineer]: OCPBUGS-XXXXX, ...
 > Confirm? (yes/no/skip)"
 
+- When proposing unassignment, include the engineer's current load: "Propose removing assignee from N bugs assigned to [engineer] (total open: X of Y): ..."
 - **Wait for user confirmation** — the user may skip an individual engineer's batch.
 - If confirmed: for each bug in the batch:
   1. Remove the assignee (`assignee: null`)
-  2. Post the "EOW cleanup — unassignment" comment
 - Record each in the tracker under "Unassigned This Week (EOW Cleanup)".
 
 ### Step 6: Bulk tracker update
 
 After all bugs are processed, perform a single bulk write to the tracker:
 
-1. Update "Assignment Distribution": decrement counts and remove keys for unassigned bugs.
+1. Update "Assignment Distribution": decrement RIT Assigned counts, remove keys for unassigned bugs. Decrement Total Open counts accordingly (maintain "X of Y" format). Recalculate the bandwidth summary line. Update capacity indicators (remove ⚠️/🛑 if engineer drops below thresholds).
 2. Append "Unassigned This Week (EOW Cleanup)" table.
 
 ### Step 7: Final summary
@@ -177,7 +173,6 @@ Show:
 - **Never unassign bugs with linked PRs** — active PR means work is in progress without
   a status update; skip it.
 - **Batch by engineer** — propose all of one engineer's stale bugs at once for efficiency.
-- **Always comment before unassigning** — never silently remove an assignee.
 - **Paths use the current working directory** — never hardcode paths.
 - **All comments must be Red Hat Employee only** — every `addCommentToJiraIssue` call must include `commentVisibility: {"type": "group", "value": "Red Hat Employee"}`. These are internal process notes and must not be publicly visible.
 - **Skip EOW comment if bug is already closed** — after calling `editJiraIssue`, check the returned `status.statusCategory.key`. If it is `done`, the bug was closed concurrently; skip posting the comment (the unassignment is a no-op).

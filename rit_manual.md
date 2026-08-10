@@ -568,6 +568,15 @@ filter in ("operator-framework-all-bugs", "PIXAA HIVE bugs", "PIXAA CCO bugs", "
 Bug status changed to NEW as previous linked PR
 ```
 
+**Engineer bug count limits** (used by `/rit-triage` and `/rit-start`):
+```
+SOFT_LIMIT = 6
+HARD_LIMIT = 8
+```
+
+Soft limit = 100% capacity. Bugs beyond soft limit trigger a terminal warning.
+Hard limit = absolute cap. No further bugs assigned to an engineer at hard limit.
+
 ---
 
 # PIXAA Bugs Dashboard JQL Queries
