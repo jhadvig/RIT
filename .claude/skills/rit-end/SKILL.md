@@ -39,7 +39,7 @@ Read `rit_manual.md` from the **current working directory** and extract:
 
 2. **Tracker file** — The tracker file found in step 1 is also the source of truth for
    which bugs were assigned by `/rit-triage`. Read:
-   - The "Assignment Distribution" table: engineer → bug count (parse from "X of Y" format, where Y is the soft limit), assigned keys. Also read the soft and hard limit values from the header line ("Soft limit: N | Hard limit: M").
+   - The "Assignment Distribution" table: engineer → total open count (from "X of Y" format in the Total Open column), RIT assigned count, and keys. Also read the soft and hard limit values from the header line ("Soft limit: N | Hard limit: M").
    - The "Triaged This Week" table: all bugs with their assigned engineer
 
    Collect the full list of bug keys assigned by RIT this week.
@@ -120,7 +120,7 @@ batch together:
 > "Propose removing assignee from N bugs assigned to [engineer]: OCPBUGS-XXXXX, ...
 > Confirm? (yes/no/skip)"
 
-- When proposing unassignment, include the engineer's current capacity: "Propose removing assignee from N bugs assigned to [engineer] (currently at X of Y): ..."
+- When proposing unassignment, include the engineer's current load: "Propose removing assignee from N bugs assigned to [engineer] (total open: X of Y): ..."
 - **Wait for user confirmation** — the user may skip an individual engineer's batch.
 - If confirmed: for each bug in the batch:
   1. Remove the assignee (`assignee: null`)
@@ -130,7 +130,7 @@ batch together:
 
 After all bugs are processed, perform a single bulk write to the tracker:
 
-1. Update "Assignment Distribution": decrement counts (maintain "X of Y" format), remove keys for unassigned bugs. Recalculate the bandwidth summary line. Update capacity indicators (remove ⚠️/🛑 if engineer drops below thresholds).
+1. Update "Assignment Distribution": decrement RIT Assigned counts, remove keys for unassigned bugs. Decrement Total Open counts accordingly (maintain "X of Y" format). Recalculate the bandwidth summary line. Update capacity indicators (remove ⚠️/🛑 if engineer drops below thresholds).
 2. Append "Unassigned This Week (EOW Cleanup)" table.
 
 ### Step 7: Final summary

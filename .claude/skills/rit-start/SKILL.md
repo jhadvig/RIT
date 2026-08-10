@@ -2,7 +2,7 @@
 name: rit-start
 description: Start-of-week RIT setup — select this week's RIT lead and team from the People Directory, create the week's tracker file with roster and empty triage tables
 argument-hint: "[YYYY-MM-DD] — optional week start date (Monday); defaults to the most recent Monday"
-allowed-tools: Read, Edit, Write
+allowed-tools: Read, Edit, Write, mcp__plugin_jira_atlassian__searchJiraIssuesUsingJql
 ---
 
 # RIT Start
@@ -102,7 +102,11 @@ For each person marked unavailable, ask for the reason:
 
 Ask: "Should they be marked as unavailable (still listed in tracker, skipped by triage) or excluded entirely (not listed)?"
 
-### Step 6: Create tracker file
+### Step 6: Query initial workload
+
+For each available engineer (not PTO/excluded), run a Jira query to count their total open bugs: `assignee = "<accountId>" AND project = OCPBUGS AND statusCategory != done`. Store the count as `total_open` — this populates the "Total Open" column in the tracker so the first triage run starts with an accurate capacity picture.
+
+### Step 7: Create tracker file
 
 Create `triaged_bugs_YYYY-MM-DD.md` in the **current working directory** using the week start date.
 
@@ -129,11 +133,11 @@ File contents:
 
 Soft limit: 6 | Hard limit: 8
 
-Team bandwidth: 0% (0/N soft capacity) | 0 at limit | 0 over | N available
+Team bandwidth: X% (N/M soft capacity) | A at limit | B over | C available
 
-| Engineer | Bugs | Keys |
-|----------|------|------|
-| Name | 0 of 6 |  |
+| Engineer | Total Open | RIT Assigned | Keys |
+|----------|------------|--------------|------|
+| Name | X of 6 | 0 |  |
 
 ## Triaged This Week
 
@@ -160,7 +164,7 @@ Team bandwidth: 0% (0/N soft capacity) | 0 at limit | 0 over | N available
 - List **only available engineers** (not PTO/unavailable) in the Assignment Distribution table, each starting at 0 bugs, sorted alphabetically by last name.
 - Include PTO/unavailable engineers in the Engineering table (so they're visible in the roster) but **not** in the Assignment Distribution table (so `/rit-triage` doesn't assign to them).
 
-### Step 7: Confirm
+### Step 8: Confirm
 
 Show a final summary:
 ```
@@ -183,5 +187,6 @@ File created: triaged_bugs_YYYY-MM-DD.md
 - **Paths use the current working directory** — never hardcode paths.
 - **The tracker file is gitignored** — it is local only and not committed.
 - **PTO/unavailable engineers appear in the Engineering table but not in Assignment Distribution** — `/rit-triage` reads the Assignment Distribution table to decide who gets bugs, so omitting them there is sufficient.
+- **Total Open is queried from Jira at setup** — the initial workload snapshot gives the first triage run an accurate capacity baseline. `/rit-triage` re-queries each run to stay current.
 - **Missing email or Jira Account ID (`—`)** — if a selected engineer or the chosen lead has `—` in either field, stop and ask the user to fill those values in the People Directory before creating the tracker. The tracker cannot be created with `—` in those columns because `/rit-triage` uses them for Jira assignment.
 - **Soft/hard limits are read from Shared Constants** — do not hardcode the values in the tracker template. Read `SOFT_LIMIT` and `HARD_LIMIT` from `rit_manual.md` at runtime.

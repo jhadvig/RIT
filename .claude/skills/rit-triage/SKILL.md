@@ -70,9 +70,12 @@ Read `rit_manual.md` from the **current working directory** and extract:
 
 5. **RIT team roster** — Find the most recent `triaged_bugs_YYYY-MM-DD.md` file in the **current working directory** (sort by date in filename, pick latest). Extract week-start date. If that date is more than 7 days in the past, **stop and warn**: "⚠️ The tracker file appears stale (week of YYYY-MM-DD). Please run `/rit-start` to set up the current rotation before running triage." Parse the "Engineering" table for: name, email, Jira Account ID, area of expertise, notes (PTO). Include all engineers regardless of role label. Skip engineers marked PTO.
 
-6. **Assignment distribution** — Read the "Assignment Distribution" table from the tracker. Parse each engineer's current bug count (from "X of Y" format) and assigned keys. Load the soft and hard limit values from the header line.
+6. **Assignment distribution** — Read the "Assignment Distribution" table from the tracker. Parse each engineer's RIT assigned count and keys. Load the soft and hard limit values from the header line. (The "Total Open" column is a snapshot from the last triage run — it will be refreshed by step 7.)
 
-7. **Total workload** — For each engineer in the roster, run a Jira query to get their total open bug count (not just RIT-assigned): `assignee = "<accountId>" AND project = OCPBUGS AND statusCategory != done`. Store as `total_open` alongside the RIT tracker count. This is displayed during assignment proposals so the user can see actual workload, not just RIT-assigned count.
+7. **Total workload** — For each engineer in the roster, run a Jira query: `assignee = "<accountId>" AND project = OCPBUGS AND statusCategory != done`. Request fields: `priority`. Store per engineer:
+   - `total_open`: total count of all open bugs (regardless of source)
+   - `priority_breakdown`: count by priority (Critical, Major, Normal, Minor) — used by the assign sub-agent to determine whether an engineer at capacity can still receive a Critical or Major bug
+   Soft and hard limits apply against `total_open`, not just RIT-assigned count.
 
 #### Step 2: Fetch all panels
 
@@ -103,7 +106,7 @@ Show:
   ```
   Team bandwidth: X% (N/M soft capacity) | A at limit | B over | C available
   ```
-- Per-engineer load: name → "X of Y (Z total open)"
+- Per-engineer load: name → "X of Y" (where X = total open bugs, Y = soft limit)
 
 Ask: "Proceed with triage? (yes/no)"
 
@@ -177,32 +180,46 @@ Return each bug to parent with: key, assessed state (priority, release blocker, 
 
 #### Assign sub-agent
 
-Spawned via the Agent tool. Receives triaged-but-unassigned bugs in sort order, plus the current assignment distribution (engineer → count, keys) and roster (name, Jira Account ID, expertise area).
+Spawned via the Agent tool. Receives triaged-but-unassigned bugs (already sorted by priority from triage), plus the current workload per engineer (total open count, priority breakdown, assigned keys) and roster (name, Jira Account ID, expertise area).
 
-**Step 1: Build candidate list**
-- All engineers not at hard limit (`HARD_LIMIT`), sorted by current bug count ascending.
-- Expertise-weighted ranking (see below).
+Assignment proceeds in three waves. Each wave proposes a batch to the user before executing.
 
-**Step 2: Rank engineers (expertise-weighted)**
-- Primary factor: bug count (lowest first).
-- Secondary factor: expertise match. An engineer whose expertise area matches the bug's component is preferred even with **up to 2 more bugs** than a non-expert. Beyond a 2-bug difference, load takes priority.
-- Show total open bugs alongside RIT count in proposals so the user sees actual workload: "Jackson Lee (RIT: 3 of 6 | total open: 8)".
+**Wave 1 — Critical bugs (always assigned)**
+- All Critical priority and Release Blocker Approved bugs.
+- Capacity limits do NOT apply — these are always assigned.
+- Rank engineers by: expertise match first (prefer component expert even with up to 2 more total bugs), then lowest total open count.
+- Propose batch: "Critical bugs (N): assign OCPBUGS-X to Jackson Lee (4 of 6), OCPBUGS-Y to Jon Jackson (7 of 6 ⚠️)?"
+- Wait for user confirmation. User may adjust.
+- Execute confirmed assignments via Jira. Update running totals.
 
-**Step 3: Propose assignments**
-- Group bugs by component where possible.
-- Propose batches: "Console bugs (3): assign OCPBUGS-X to Jackson Lee (RIT: 2/6 | total: 7), OCPBUGS-Y to Jon Jackson (RIT: 1/6 | total: 4)?"
-- Wait for user confirmation. User may adjust individual assignments.
+**Wave 2 — Major bugs (always assigned)**
+- All Major priority bugs.
+- Capacity limits do NOT apply — these are always assigned.
+- Distribute as evenly as possible across all engineers, using updated totals from Wave 1.
+- Rank by: expertise match (up to 2-bug advantage), then lowest total open count.
+- Propose batch. Wait for confirmation. Execute. Update totals.
 
-**Step 4: Enforce capacity limits**
-- **Under soft limit** (count < `SOFT_LIMIT`): assign normally.
-- **At or above soft limit** (count >= `SOFT_LIMIT` and count < `HARD_LIMIT`): assign, but show warning: "⚠️ [Engineer] at [N] of [SOFT_LIMIT] — soft limit reached."
-- **At hard limit** (count >= `HARD_LIMIT`): show 🛑, skip this engineer, pick next-lowest-loaded.
-- **All engineers at hard limit (normal bugs)**: stop assigning. Report: "All engineers at capacity. N bugs remain unassigned."
-- **Critical/blocker override**: if a bug is Critical priority OR has Release Blocker = Approved, the hard limit does NOT block assignment. Instead, propose to the user with an explicit override prompt: "🛑 All engineers at hard limit. OCPBUGS-XXXXX is Critical/Release Blocker — propose override assignment to [lowest-loaded engineer] (currently at N of HARD_LIMIT). Accept / pick different engineer / skip?" The user must confirm the override. This ensures Critical and Release Blocker bugs are never left unassigned due to capacity limits alone.
+**Wave 3 — Normal and lower priority bugs (backfill)**
+- All Normal, Minor, and Undefined priority bugs.
+- Capacity limits apply:
+  - **Under soft limit** (total_open < `SOFT_LIMIT`): assign normally.
+  - **At or above soft limit** (total_open >= `SOFT_LIMIT` and < `HARD_LIMIT`): assign, but show ⚠️ warning.
+  - **At hard limit** (total_open >= `HARD_LIMIT`): skip this engineer, pick next-lowest-loaded.
+  - **All engineers at or above soft limit**: stop assigning. Report: "All engineers at capacity for normal-priority bugs. N bugs remain unassigned."
+- Rank by: expertise match (up to 2-bug advantage), then lowest total open count.
+- Propose batch. Wait for confirmation. Execute. Update totals.
 
-**Step 5: Execute**
-- On confirmation: update assignee via Jira.
-- Return to parent: bug key, assigned engineer, new count.
+**Proposal format**
+
+All wave proposals show engineer's current total open count against soft limit:
+```
+"Console bugs (3): assign OCPBUGS-X to Jackson Lee (4 of 6), OCPBUGS-Y to Jon Jackson (2 of 6)"
+```
+Add ⚠️ when total_open >= `SOFT_LIMIT` and < `HARD_LIMIT`. Add 🛑 when total_open >= `HARD_LIMIT`.
+
+**Output**
+
+Return to parent: bug key, assigned engineer, updated total count per wave.
 
 ### Phase 3: Catch & Report (parent agent)
 
@@ -247,7 +264,7 @@ If yes, output copy-paste-ready Slack mrkdwn with all assigned bugs (full plate)
 
 Single bulk write to tracker file:
 
-1. Rewrite "Assignment Distribution" with updated counts ("X of Y" format), keys, bandwidth summary, and capacity indicators (⚠️/🛑).
+1. Rewrite "Assignment Distribution" with updated total open counts ("X of Y" format), RIT assigned counts, keys, bandwidth summary, and capacity indicators (⚠️/🛑).
 2. Append all newly triaged bugs to "Triaged This Week".
 3. Add any closed bugs to "Closed This Week".
 4. Write outliers to "Outliers (In Progress / All Open)".
@@ -276,11 +293,11 @@ Soft limit: 6 | Hard limit: 8
 
 Team bandwidth: X% (N/M soft capacity) | A at limit | B over | C available
 
-| Engineer | Bugs | Keys |
-|----------|------|------|
-| Name | X of 6 | OCPBUGS-XXXXX, OCPBUGS-YYYYY, ... |
-| Name | 6 of 6 ⚠️ | OCPBUGS-XXXXX, ... |
-| Name | 8 of 6 🛑 | OCPBUGS-XXXXX, ... |
+| Engineer | Total Open | RIT Assigned | Keys |
+|----------|------------|--------------|------|
+| Name | X of 6 | N | OCPBUGS-XXXXX, OCPBUGS-YYYYY, ... |
+| Name | 6 of 6 ⚠️ | N | OCPBUGS-XXXXX, ... |
+| Name | 8 of 6 🛑 | N | OCPBUGS-XXXXX, ... |
 
 ## Triaged This Week
 
@@ -303,9 +320,12 @@ Team bandwidth: X% (N/M soft capacity) | A at limit | B over | C available
 |-----|---------|----------|-------|---------|
 ```
 
-The **Assignment Distribution** table must include **all engineers** from the roster (even those with 0 bugs) and a **Keys** column listing every bug key assigned, comma-separated. The **Bugs** column uses "X of Y" format where Y is `SOFT_LIMIT`. Add ⚠️ when X >= Y and X < `HARD_LIMIT`. Add 🛑 when X >= `HARD_LIMIT` (🛑 takes precedence over ⚠️).
+The **Assignment Distribution** table must include **all engineers** from the roster (even those with 0 bugs). Columns:
+- **Total Open**: "X of Y" format where X = engineer's total open bugs in Jira (all sources), Y = `SOFT_LIMIT`. Add ⚠️ when X >= Y and < `HARD_LIMIT`. Add 🛑 when X >= `HARD_LIMIT` (🛑 takes precedence).
+- **RIT Assigned**: count of bugs assigned by `/rit-triage` this week (keys in the Keys column).
+- **Keys**: comma-separated bug keys assigned by `/rit-triage` this week. Used by `/rit-end` for cleanup.
 
-The **bandwidth summary** line uses: capacity = `(total_bugs / (engineer_count * SOFT_LIMIT)) * 100`. Bandwidth categories: "available" = count < `SOFT_LIMIT`, "at limit" = `SOFT_LIMIT` <= count < `HARD_LIMIT`, "over" = count >= `HARD_LIMIT`.
+The **bandwidth summary** line uses: capacity = `(sum_total_open / (engineer_count * SOFT_LIMIT)) * 100`. Bandwidth categories: "available" = total_open < `SOFT_LIMIT`, "at limit" = `SOFT_LIMIT` <= total_open < `HARD_LIMIT`, "over" = total_open >= `HARD_LIMIT`.
 
 ---
 
@@ -315,10 +335,11 @@ The **bandwidth summary** line uses: capacity = `(total_bugs / (engineer_count *
 - **Dedup before processing** — a bug appearing in multiple panels is processed only once, attributed to the highest-priority panel it appeared in.
 - **Three-tier sort drives everything** — panel tier, then bug priority, then panel order. This determines triage order AND assignment order (higher-priority bugs get first pick of lowest-loaded engineers).
 - **Anomaly detection** — Normal/Minor bugs in Tier 1 panels are flagged. These panels should not contain low-priority bugs.
-- **Soft limit = warning, hard limit = stop (with Critical override)** — at soft limit, show ⚠️ and continue. At hard limit, show 🛑 and skip to next engineer. Exception: Critical priority or Release Blocker Approved bugs bypass hard limit with explicit user confirmation.
-- **All engineers at capacity** — for normal bugs, stop assigning and report remaining. For Critical/Release Blocker bugs, propose override assignment to lowest-loaded engineer with user confirmation.
-- **Total workload visibility** — assignment proposals show both RIT tracker count and total open Jira bugs per engineer so capacity decisions account for actual workload, not just RIT-assigned bugs.
-- **Expertise-weighted assignment** — expertise match is preferred even with up to 2 more bugs than a non-expert. Beyond a 2-bug difference, load takes priority.
+- **Priority-wave assignment** — bugs are assigned in three waves: Critical (always assigned, no capacity limits), Major (always assigned, even distribution), Normal/Minor (backfill to engineers with remaining capacity). This ensures high-priority bugs are never left unassigned.
+- **Total workload drives capacity** — soft/hard limits apply against each engineer's total open Jira bugs (all sources), not just RIT-assigned count. An engineer carrying 10 bugs from previous rotations is not treated as empty.
+- **Soft limit = warning, hard limit = stop (Normal/Minor only)** — at soft limit, show ⚠️. At hard limit, show 🛑 and skip. These limits only gate Wave 3 (Normal/Minor). Critical and Major bugs are always assigned regardless of capacity.
+- **All engineers at capacity** — for Normal/Minor, stop assigning and report remaining. Critical/Major are never blocked.
+- **Expertise-weighted assignment** — within each wave, expertise match is preferred even with up to 2 more total bugs than a non-expert. Beyond a 2-bug difference, load takes priority.
 - **Catch pass is report-only** — In Progress and All Open panels are scanned for Major/Critical outliers but no automatic action is taken.
 - **Slack summary is optional** — only generated when user says yes. Includes all assigned bugs (full plate), no capacity numbers.
 - **Automate the obvious, pause on judgment** — `triaged` labels are applied automatically. Priority, assignee, component transfer, and release blocker always require a proposal + confirmation.
