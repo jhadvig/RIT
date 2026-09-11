@@ -85,10 +85,17 @@ Read `rit_manual.md` from the **current working directory** and extract:
 
 3. **Deduplicate** — Process panels in priority order. If a bug key already appeared in an earlier panel, discard the duplicate. First panel occurrence wins.
 
+3b. **CVE cluster detection** — After deduplication, scan all remaining bugs for CVE IDs in the summary (pattern: `CVE-YYYY-NNNNN`). Group bugs that share the same CVE ID into a **CVE cluster**. Within each cluster:
+   - Select the **primary bug**: the highest-priority clone; if tied, the one from the highest-priority panel; if still tied, the lowest-numbered key.
+   - All other cluster members become **secondary bugs** (version clones).
+   - The cluster is treated as a single triage and assignment unit throughout the rest of the pipeline. Secondary bugs are not triaged independently — they inherit the primary's priority, label, and assignee.
+   - Clusters are sorted into the pipeline by the primary bug's panel tier and priority.
+
 4. **Sort** — Apply the three-tier sort: panel tier → bug priority → panel order within tier.
 
 5. **Classify** each bug (evaluated in order, first match wins):
    - `possible_sustaining`: created < 60 minutes ago AND has any `arc:*` label → auto-skip.
+   - `cve_cluster`: primary bug of a CVE cluster (identified in step 3b) → triage the primary, then propagate label/priority/assignee to all secondaries. Count as **1** against capacity regardless of cluster size.
    - `needs_only_assignee`: has `triaged` label ✓, has priority ✓, missing assignee only, status is New or ASSIGNED → run Action 2 (component check), skip Actions 3-4, pass directly to assign sub-agent.
    - `needs_only_label`: has assignee ✓, has priority ✓, missing `triaged` label only → auto-apply.
    - `needs_triage`: missing one or more of priority, assignee, or needs status transition.
@@ -100,7 +107,8 @@ Read `rit_manual.md` from the **current working directory** and extract:
 Show:
 - Total bug count across all panels
 - Bugs by tier: Tier 1 count, Tier 2 count
-- Bugs by classification: needs_triage, needs_only_assignee, needs_only_label, post_missing_fields, post_clean, possible_sustaining
+- Bugs by classification: needs_triage, cve_cluster, needs_only_assignee, needs_only_label, post_missing_fields, post_clean, possible_sustaining
+- CVE clusters: list each cluster with its CVE ID, version count, and primary key (e.g. "CVE-2025-5418: 8 versions, primary OCPBUGS-56938")
 - Anomalies: Normal/Minor bugs in Tier 1 panels
 - Current team bandwidth status from tracker:
   ```
@@ -220,9 +228,16 @@ All wave proposals show the engineer's current load counter against the soft lim
 
 Add ⚠️ when load counter >= `SOFT_LIMIT` and < `HARD_LIMIT`. Add 🛑 when load counter >= `HARD_LIMIT`.
 
+**CVE cluster assignment**
+
+CVE clusters are passed to the assign sub-agent as a single unit (the primary bug key, carrying the full list of secondary keys). Assignment rules:
+- Count as **1** against the load counter regardless of how many version clones exist.
+- Once an engineer is selected, apply the same assignee to the primary AND all secondary bugs via Jira.
+- In the proposal, show the CVE ID and version count: `"CVE-2025-5418 (8 versions): assign OCPBUGS-56938 + 7 clones to Jackson Lee (1 of 6)"`
+
 **Output**
 
-Return to parent: bug key, assigned engineer, updated total count per wave.
+Return to parent: bug key (plus secondary keys if CVE cluster), assigned engineer, updated total count per wave.
 
 ### Phase 3: Catch & Report (parent agent)
 
@@ -268,7 +283,7 @@ If yes, output copy-paste-ready Slack mrkdwn with all assigned bugs (full plate)
 Single bulk write to tracker file:
 
 1. Rewrite "Assignment Distribution" with updated total open counts ("X of Y" format), RIT assigned counts, keys, bandwidth summary, and capacity indicators (⚠️/🛑).
-2. Append all newly triaged bugs to "Triaged This Week".
+2. Append all newly triaged bugs to "Triaged This Week". CVE clusters appear as a single row: the Bug column lists all keys (e.g. `OCPBUGS-56938 + 7 clones`) and Actions Taken notes the CVE ID and version count.
 3. Add any closed bugs to "Closed This Week".
 4. Write outliers to "Outliers (In Progress / All Open)".
 
@@ -343,6 +358,8 @@ The **bandwidth summary** line uses the load counter for each engineer (RIT assi
 - **Soft limit = warning, hard limit = stop (Normal/Minor only)** — at soft limit, show ⚠️. At hard limit, show 🛑 and skip. These limits only gate Wave 3 (Normal/Minor). Critical and Major bugs are always assigned regardless of capacity.
 - **All engineers at capacity** — for Normal/Minor, stop assigning and report remaining. Critical/Major are never blocked.
 - **Expertise-weighted assignment** — within each wave, expertise match is preferred even with up to 2 more total bugs than a non-expert. Beyond a 2-bug difference, load takes priority.
+- **CVE clusters are one work unit** — bugs sharing the same CVE ID across OCP versions are grouped, triaged once (via the primary bug), and assigned to one engineer. All version clones receive the same assignee, label, and priority. The cluster counts as 1 against the load counter regardless of version count.
+- **CVE cluster detection uses the summary** — match the pattern `CVE-YYYY-NNNNN`. Bugs without a CVE ID in the summary are never grouped even if they are related.
 - **Catch pass is report-only** — In Progress and All Open panels are scanned for Major/Critical outliers but no automatic action is taken.
 - **Slack summary is optional** — only generated when user says yes. Includes all assigned bugs (full plate), no capacity numbers.
 - **Automate the obvious, pause on judgment** — `triaged` labels are applied automatically. Priority, assignee, component transfer, and release blocker always require a proposal + confirmation.
