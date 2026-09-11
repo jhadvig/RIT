@@ -617,7 +617,6 @@ Fields marked `—` should be filled in the first time that person participates 
 | Name | Email | Jira Account ID | Area of expertise | Pod |
 |------|-------|-----------------|-------------------|-----|
 | Jakub Hadvig | jhadvig@redhat.com | 70121:7dcaf1d9-8410-4fbf-b976-5c10712ba4f3 | Console (ex-Lead) | Green Koala |
-| Pratik Mahajan | pmahajan@redhat.com | 712020:b8285f9a-f813-4133-a6b1-8a0aa61f52a2 | OTA | Green Koala |
 | Jefferson Ramos (QE) | jeramos@redhat.com | 712020:53c1726a-176e-4e2e-ab07-794a67784f06 | Serverless | Green Koala |
 | Rachel Ryan | raryan@redhat.com | 62a0648e6a7b750068a29328 | CAPI / Cluster Infra | Green Koala |
 | Ankita Thomas | ankithom@redhat.com | 712020:5f75030b-486a-48b6-8b9e-4b573884eafd | OLM | Green Koala |
