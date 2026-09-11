@@ -560,7 +560,7 @@ These values are referenced by all three RIT skills. Update here when they chang
 
 **PIXAA base filter** (used in all JQL queries):
 ```
-filter in ("operator-framework-all-bugs", "PIXAA HIVE bugs", "PIXAA CCO bugs", "PIXAA OCPCLOUD bugs", "PIXAA Console bugs", "PIXAA MCP Server Bugs", "PIXAA Serverless Bugs", "All OTA Bugs")
+filter IN (operator-framework-all-bugs,"PIXAA HIVE bugs","PIXAA CCO bugs","PIXAA OCPCLOUD bugs", "PIXAA Console bugs", "PIXAA MCP Server Bugs", "PIXAA Serverless Bugs","All OTA Bugs") AND (labels NOT IN ("art:bridge-bug") OR labels IS EMPTY)
 ```
 
 **Prow Bot PR-closed reset comment string** (used to detect automated resets):
@@ -581,7 +581,7 @@ Hard limit = absolute cap. No further bugs assigned to an engineer at hard limit
 
 # PIXAA Bugs Dashboard JQL Queries
 
-The base filter set for all panels: `filter in (operator-framework-all-bugs, "PIXAA HIVE bugs", "PIXAA CCO bugs", "PIXAA OCPCLOUD bugs", "PIXAA Console bugs", "PIXAA MCP Server Bugs", "PIXAA Serverless Bugs", "All OTA Bugs")`
+The base filter set for all panels: `filter IN (operator-framework-all-bugs,"PIXAA HIVE bugs","PIXAA CCO bugs","PIXAA OCPCLOUD bugs", "PIXAA Console bugs", "PIXAA MCP Server Bugs", "PIXAA Serverless Bugs","All OTA Bugs") AND (labels NOT IN ("art:bridge-bug") OR labels IS EMPTY)`
 
 Common triage condition: `(labels is EMPTY or labels not in (triaged) or assignee is EMPTY or priority is EMPTY) and (labels not in (ocp-sustaining) or labels is EMPTY)`
 
