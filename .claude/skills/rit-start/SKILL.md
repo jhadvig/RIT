@@ -106,6 +106,17 @@ Ask: "Should they be marked as unavailable (still listed in tracker, skipped by 
 
 For each available engineer (not PTO/excluded), run a Jira query to count their total open bugs: `assignee = "<accountId>" AND project = OCPBUGS AND statusCategory != done`. Store the count as `total_open` — this populates the "Total Open" column in the tracker so the first triage run starts with an accurate capacity picture.
 
+### Step 6b: Confirm capacity mode
+
+After querying workloads, ask:
+
+> "Capacity mode for this rotation?
+> - **baseline** (recommended): current open bugs are informational only — soft/hard limits apply to RIT-assigned bugs only. Use when engineers carry pre-existing load from prior rotations.
+> - **total**: soft/hard limits apply to each engineer's total open bug count (RIT-assigned + pre-existing).
+> (baseline/total, default: baseline)"
+
+Record the chosen mode. It will be stored in the tracker and read by `/rit-triage` each run.
+
 ### Step 7: Create tracker file
 
 Create `triaged_bugs_YYYY-MM-DD.md` in the **current working directory** using the week start date.
@@ -131,13 +142,13 @@ File contents:
 
 ## Assignment Distribution
 
-Soft limit: 6 | Hard limit: 8
+Soft limit: 6 | Hard limit: 8 | Capacity mode: baseline
 
-Team bandwidth: X% (N/M soft capacity) | A at limit | B over | C available
+Team bandwidth: X% (0/M RIT capacity) | A at limit | B over | C available
 
-| Engineer | Total Open | RIT Assigned | Keys |
-|----------|------------|--------------|------|
-| Name | X of 6 | 0 |  |
+| Engineer | Total Open (baseline) | RIT Assigned | Keys |
+|----------|-----------------------|--------------|------|
+| Name | X | 0 |  |
 
 ## Triaged This Week
 
@@ -187,6 +198,7 @@ File created: triaged_bugs_YYYY-MM-DD.md
 - **Paths use the current working directory** — never hardcode paths.
 - **The tracker file is gitignored** — it is local only and not committed.
 - **PTO/unavailable engineers appear in the Engineering table but not in Assignment Distribution** — `/rit-triage` reads the Assignment Distribution table to decide who gets bugs, so omitting them there is sufficient.
-- **Total Open is queried from Jira at setup** — the initial workload snapshot gives the first triage run an accurate capacity baseline. `/rit-triage` re-queries each run to stay current.
+- **Total Open is queried from Jira at setup** — the initial workload snapshot gives the first triage run a reference picture. `/rit-triage` re-queries each run to stay current.
+- **Capacity mode is set once per rotation** — `baseline` (default) counts only RIT-assigned bugs against limits; `total` counts all open bugs. The choice is stored in the tracker header line and read by `/rit-triage` each run. In baseline mode the "Total Open" column header reads "Total Open (baseline)" and no ⚠️/🛑 indicators are shown there.
 - **Missing email or Jira Account ID (`—`)** — if a selected engineer or the chosen lead has `—` in either field, stop and ask the user to fill those values in the People Directory before creating the tracker. The tracker cannot be created with `—` in those columns because `/rit-triage` uses them for Jira assignment.
 - **Soft/hard limits are read from Shared Constants** — do not hardcode the values in the tracker template. Read `SOFT_LIMIT` and `HARD_LIMIT` from `rit_manual.md` at runtime.

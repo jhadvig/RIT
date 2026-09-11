@@ -70,7 +70,7 @@ Read `rit_manual.md` from the **current working directory** and extract:
 
 5. **RIT team roster** — Find the most recent `triaged_bugs_YYYY-MM-DD.md` file in the **current working directory** (sort by date in filename, pick latest). Extract week-start date. If that date is more than 7 days in the past, **stop and warn**: "⚠️ The tracker file appears stale (week of YYYY-MM-DD). Please run `/rit-start` to set up the current rotation before running triage." Parse the "Engineering" table for: name, email, Jira Account ID, area of expertise, notes (PTO). Include all engineers regardless of role label. Skip engineers marked PTO.
 
-6. **Assignment distribution** — Read the "Assignment Distribution" table from the tracker. Parse each engineer's RIT assigned count and keys. Load the soft and hard limit values from the header line. (The "Total Open" column is a snapshot from the last triage run — it will be refreshed by step 7.)
+6. **Assignment distribution** — Read the "Assignment Distribution" table from the tracker. Parse each engineer's RIT assigned count and keys. Load the soft and hard limit values and **capacity mode** from the header line (`Soft limit: N | Hard limit: M | Capacity mode: baseline|total`). If `Capacity mode` is absent, default to `total` for backwards compatibility. (The "Total Open" column is a snapshot from the last triage run — it will be refreshed by step 7.)
 
 7. **Total workload** — For each engineer in the roster, run a Jira query: `assignee = "<accountId>" AND project = OCPBUGS AND statusCategory != done`. Request fields: `priority`. Store per engineer:
    - `total_open`: total count of all open bugs (regardless of source)
@@ -201,21 +201,24 @@ Assignment proceeds in three waves. Each wave proposes a batch to the user befor
 
 **Wave 3 — Normal and lower priority bugs (backfill)**
 - All Normal, Minor, and Undefined priority bugs.
-- Capacity limits apply:
-  - **Under soft limit** (total_open < `SOFT_LIMIT`): assign normally.
-  - **At or above soft limit** (total_open >= `SOFT_LIMIT` and < `HARD_LIMIT`): assign, but show ⚠️ warning.
-  - **At hard limit** (total_open >= `HARD_LIMIT`): skip this engineer, pick next-lowest-loaded.
+- The **load counter** used for capacity checks depends on the capacity mode from the tracker header:
+  - **`baseline` mode**: use `rit_assigned` (bugs assigned by `/rit-triage` this week only). Pre-existing bugs are informational and do not gate assignment.
+  - **`total` mode**: use `total_open` (all open bugs in Jira, regardless of source).
+- Capacity limits apply to the load counter:
+  - **Under soft limit** (load < `SOFT_LIMIT`): assign normally.
+  - **At or above soft limit** (load >= `SOFT_LIMIT` and < `HARD_LIMIT`): assign, but show ⚠️ warning.
+  - **At hard limit** (load >= `HARD_LIMIT`): skip this engineer, pick next-lowest-loaded.
   - **All engineers at or above soft limit**: stop assigning. Report: "All engineers at capacity for normal-priority bugs. N bugs remain unassigned."
-- Rank by: expertise match (up to 2-bug advantage), then lowest total open count.
+- Rank by: expertise match (up to 2-bug advantage), then lowest load counter.
 - Propose batch. Wait for confirmation. Execute. Update totals.
 
 **Proposal format**
 
-All wave proposals show engineer's current total open count against soft limit:
-```
-"Console bugs (3): assign OCPBUGS-X to Jackson Lee (4 of 6), OCPBUGS-Y to Jon Jackson (2 of 6)"
-```
-Add ⚠️ when total_open >= `SOFT_LIMIT` and < `HARD_LIMIT`. Add 🛑 when total_open >= `HARD_LIMIT`.
+All wave proposals show the engineer's current load counter against the soft limit:
+- **`baseline` mode**: show RIT assigned count — `"Console bugs (3): assign OCPBUGS-X to Jackson Lee (1 of 6), OCPBUGS-Y to Jon Jackson (0 of 6)"`
+- **`total` mode**: show total open count — `"Console bugs (3): assign OCPBUGS-X to Jackson Lee (4 of 6), OCPBUGS-Y to Jon Jackson (2 of 6)"`
+
+Add ⚠️ when load counter >= `SOFT_LIMIT` and < `HARD_LIMIT`. Add 🛑 when load counter >= `HARD_LIMIT`.
 
 **Output**
 
@@ -325,7 +328,7 @@ The **Assignment Distribution** table must include **all engineers** from the ro
 - **RIT Assigned**: count of bugs assigned by `/rit-triage` this week (keys in the Keys column).
 - **Keys**: comma-separated bug keys assigned by `/rit-triage` this week. Used by `/rit-end` for cleanup.
 
-The **bandwidth summary** line uses: capacity = `(sum_total_open / (engineer_count * SOFT_LIMIT)) * 100`. Bandwidth categories: "available" = total_open < `SOFT_LIMIT`, "at limit" = `SOFT_LIMIT` <= total_open < `HARD_LIMIT`, "over" = total_open >= `HARD_LIMIT`.
+The **bandwidth summary** line uses the load counter for each engineer (RIT assigned in `baseline` mode, total open in `total` mode): capacity = `(sum_load / (engineer_count * SOFT_LIMIT)) * 100`. Bandwidth categories apply to the load counter: "available" = load < `SOFT_LIMIT`, "at limit" = `SOFT_LIMIT` <= load < `HARD_LIMIT`, "over" = load >= `HARD_LIMIT`.
 
 ---
 
@@ -336,7 +339,7 @@ The **bandwidth summary** line uses: capacity = `(sum_total_open / (engineer_cou
 - **Three-tier sort drives everything** — panel tier, then bug priority, then panel order. This determines triage order AND assignment order (higher-priority bugs get first pick of lowest-loaded engineers).
 - **Anomaly detection** — Normal/Minor bugs in Tier 1 panels are flagged. These panels should not contain low-priority bugs.
 - **Priority-wave assignment** — bugs are assigned in three waves: Critical (always assigned, no capacity limits), Major (always assigned, even distribution), Normal/Minor (backfill to engineers with remaining capacity). This ensures high-priority bugs are never left unassigned.
-- **Total workload drives capacity** — soft/hard limits apply against each engineer's total open Jira bugs (all sources), not just RIT-assigned count. An engineer carrying 10 bugs from previous rotations is not treated as empty.
+- **Capacity mode drives limit enforcement** — read `Capacity mode` from the tracker header. In `baseline` mode, limits apply to RIT-assigned bugs only (pre-existing load is informational). In `total` mode, limits apply to total open Jira bugs from all sources. Default to `total` if the field is absent.
 - **Soft limit = warning, hard limit = stop (Normal/Minor only)** — at soft limit, show ⚠️. At hard limit, show 🛑 and skip. These limits only gate Wave 3 (Normal/Minor). Critical and Major bugs are always assigned regardless of capacity.
 - **All engineers at capacity** — for Normal/Minor, stop assigning and report remaining. Critical/Major are never blocked.
 - **Expertise-weighted assignment** — within each wave, expertise match is preferred even with up to 2 more total bugs than a non-expert. Beyond a 2-bug difference, load takes priority.
