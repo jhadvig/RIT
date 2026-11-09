@@ -121,8 +121,29 @@ Friday EOW  /rit-end                                 ← clean up stale assignme
 
 ### 1. Jira MCP Server (required)
 
-All skills use the Jira MCP server. Configure a working connection in your Claude Code
-settings with access to the OCPBUGS project.
+All skills call the **Atlassian Cloud** MCP server. The PIXAA dashboards and the OCPBUGS
+project live on **redhat.atlassian.net** (Atlassian Cloud), not the self-hosted
+`issues.redhat.com` instance.
+
+Two details matter, or the skills will not be able to call Jira:
+
+- **The server must be named `plugin_jira_atlassian`.** The skills list fully-qualified
+  tool names in their `allowed-tools` (for example
+  `mcp__plugin_jira_atlassian__searchJiraIssuesUsingJql`). If you register the MCP server
+  under any other name, the tool names will not match and the skills cannot call them.
+- **Use the v2 Streamable HTTP endpoint.** The legacy v1 SSE endpoint
+  (`https://mcp.atlassian.com/v1/sse`) is deprecated and now rejects calls. Use
+  `https://mcp.atlassian.com/v2/mcp` with the `http` transport.
+
+Add the server (user scope):
+
+```
+claude mcp add --scope user --transport http plugin_jira_atlassian https://mcp.atlassian.com/v2/mcp
+```
+
+Then authenticate: run `/mcp`, select `plugin_jira_atlassian`, complete the browser OAuth
+flow, and grant access to the `redhat.atlassian.net` site. The server must show
+**Connected** before running any skill.
 
 ### 2. People Directory in `rit_manual.md` (maintain as needed)
 
